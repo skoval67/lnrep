@@ -54,8 +54,7 @@
 - name: Add nodes to the swarm
   community.docker.docker_swarm:
     state: join
-    advertise_addr: "{{ ansible_host }}"
-    join_token: "{{ hostvars['adm_0']['token']['stdout'] }}"
+    join_token: "{{ hostvars['adm_0']['result']['swarm_facts']['JoinTokens']['Worker'] }}"
     remote_addrs: [ "{{ hostvars['adm_0']['ansible_default_ipv4']['address'] }}:2377" ]
   when: add_nodes
 

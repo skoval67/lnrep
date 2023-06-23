@@ -25,5 +25,4 @@
   roles:
     - osupgrade
     - role: docker_install
-      vars:
-        add_nodes: true
+      add_nodes: true

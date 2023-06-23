@@ -1,0 +1,16 @@
+---
+# tasks file for dckrcfg
+- name: Install requirements
+  ansible.builtin.pip:
+    name: "{{ python_moduls }}"
+
+- name: Set docker context
+  shell: docker context create "{{ item }}" --docker "host=ssh://ubuntu@{{ hostvars[item].ansible_host }}"
+  with_items: "{{ groups['app_servers'] }}"
+  become: false
+
+- name: Init a new swarm with default parameters
+  community.docker.docker_swarm:
+    state: present
+    advertise_addr: eth0
+  register: token

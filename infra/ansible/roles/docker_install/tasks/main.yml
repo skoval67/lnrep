@@ -1,0 +1,70 @@
+---
+# tasks file for skill
+- name: Wait for APT Lock
+  shell: |
+    while sudo fuser /var/lib/dpkg/{{ lockfilename }} >/dev/null 2>&1; do sleep 5; done;
+    while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; done;
+
+- name: "Update apt cache & install packages to allow apt to use a repository over HTTPS"
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+
+- name: "Make directory for Docker’s official GPG key"
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: "Add Docker’s official GPG key"
+  ansible.builtin.shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  changed_when: false
+
+- name: "Set up the repository"
+  ansible.builtin.shell: |
+    echo \
+    "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  changed_when: false
+
+- name: "Update the apt package index & Install Docker Engine, containerd, and Docker Compose"
+  ansible.builtin.apt:
+    name: "{{ dpackages }}"
+    state: present
+    update_cache: true
+
+- name: Install requirements
+  ansible.builtin.pip:
+    name: "{{ python_moduls }}"
+
+- name: "Enable docker service"
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Add the user 'ubuntu' to the group 'docker'
+  ansible.builtin.user:
+    name: ubuntu
+    groups: docker
+    append: true
+
+- name: Add nodes to the swarm
+  community.docker.docker_swarm:
+    state: join
+    advertise_addr: "{{ ansible_host }}"
+    join_token: "{{ hostvars['adm_0']['token']['stdout'] }}"
+    remote_addrs: [ "{{ hostvars['adm_0']['ansible_default_ipv4']['address'] }}:2377" ]
+  when: add_nodes
+
+- name: Copy file with tests
+  ansible.builtin.copy:
+    src: test.py
+    dest: /tmp/
+    mode: "0755"
+
+- name: Start test
+  ansible.builtin.command: pytest -v /tmp/test.py
+  changed_when: false

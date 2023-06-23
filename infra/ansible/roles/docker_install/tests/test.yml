@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  remote_user: root
+  name: Test the deployment
+  roles:
+    - skill

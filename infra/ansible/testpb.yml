@@ -1,0 +1,23 @@
+---
+
+- name: Setup admin workstation
+  hosts: adm_server
+  become: true
+  tasks:
+  - name: Init swarm on the first node
+    community.docker.docker_swarm:
+      state: present
+    register: result
+
+- name: Deploy App Servers
+  hosts: app_servers
+  become: true
+  vars:
+    add_nodes: true
+  tasks:
+  - name: Add nodes to the swarm
+    community.docker.docker_swarm:
+      state: join
+      join_token: "{{ hostvars['adm_0']['result']['swarm_facts']['JoinTokens']['Worker'] }}"
+      remote_addrs: [ "{{ hostvars['adm_0']['ansible_default_ipv4']['address'] }}:2377" ]
+    when: add_nodes

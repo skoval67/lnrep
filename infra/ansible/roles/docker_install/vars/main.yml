@@ -1,0 +1,26 @@
+---
+# vars file for skill
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - python3-pip
+
+dpackages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+python_moduls:
+  - requests
+  - docker
+  - pytest
+  - pytest-testinfra
+
+lockfilename:
+  - lock
+  - lock-frontend
+
+add_nodes: false

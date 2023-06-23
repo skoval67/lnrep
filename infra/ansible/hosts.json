@@ -1,0 +1,18 @@
+{
+  "admin_server_ip_address": {
+    "sensitive": false,
+    "type": "string",
+    "value": "51.250.10.39"
+  },
+  "instance_group_ip_addresses": {
+    "sensitive": false,
+    "type": [
+      "list",
+      "string"
+    ],
+    "value": [
+      "192.168.20.28",
+      "192.168.10.15"
+    ]
+  }
+}

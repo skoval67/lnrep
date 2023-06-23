@@ -1,0 +1,5 @@
+[app_servers]
+app_0 ansible_host=192.168.20.28 ansible_user=ubuntu ansible_ssh_private_key=~/.ssh/id_ed25519
+app_1 ansible_host=192.168.10.15 ansible_user=ubuntu ansible_ssh_private_key=~/.ssh/id_ed25519
+[adm_server]
+adm_0 ansible_host=51.250.10.39 ansible_user=ubuntu ansible_ssh_private_key=~/.ssh/id_ed25519

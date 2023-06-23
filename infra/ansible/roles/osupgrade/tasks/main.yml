@@ -1,0 +1,37 @@
+---
+# tasks file for osupgrade
+- name: Wait for APT Lock
+  shell: |
+    while sudo fuser /var/lib/dpkg/{{ lockfilename }} >/dev/null 2>&1; do sleep 5; done;
+    while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; done;
+
+- name: Update apt repo and cache
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 60
+
+- name: Upgrade all packages on servers
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+
+- name: Check if a reboot is needed on all servers
+  register: reboot_required_file
+  stat:
+    path: /var/run/reboot-required
+    get_md5: no
+
+- name: Reboot the server if kernel updated
+  reboot:
+    msg: "Reboot initiated by Ansible for kernel updates"
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: uptime
+  when: reboot_required_file.stat.exists
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes

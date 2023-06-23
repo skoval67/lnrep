@@ -1,0 +1,5 @@
+---
+# vars file for osupgrade
+lockfilename:
+  - lock
+  - lock-frontend

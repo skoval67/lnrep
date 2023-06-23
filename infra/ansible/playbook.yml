@@ -1,0 +1,29 @@
+---
+
+- name: Setup admin workstation
+  hosts: adm_server
+  become: true
+  roles:
+    - osupgrade
+    - docker_install
+    - swarm_init
+    - role: ufw
+      vars:
+        ufw_rules:
+        # Set logging
+        - logging: "full"
+        # Allow OpenSSH
+        - rule: allow
+          name: OpenSSH
+        # Allow all traffic from internal hosts
+        - rule: allow
+          from_ip: "192.168.0.0/16"
+
+- name: Deploy App Servers
+  hosts: app_servers
+  become: true
+  roles:
+    - osupgrade
+    - role: docker_install
+      vars:
+        add_nodes: true

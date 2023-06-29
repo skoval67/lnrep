@@ -2,7 +2,7 @@
   "admin_server_ip_address": {
     "sensitive": false,
     "type": "string",
-    "value": "158.160.96.82"
+    "value": "51.250.1.68"
   },
   "instance_group_ip_addresses": {
     "sensitive": false,
@@ -11,8 +11,8 @@
       "string"
     ],
     "value": [
-      "192.168.20.15",
-      "192.168.10.30"
+      "192.168.20.31",
+      "192.168.10.19"
     ]
   }
 }

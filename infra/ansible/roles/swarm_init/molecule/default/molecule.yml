@@ -5,8 +5,9 @@ driver:
   name: docker
 platforms:
   - name: instance
-    image: bodsch/molecule-dind
-    pre_build_image: true
+    image: markliou/dind
+    privileged: true
+    #pre_build_image: true
 provisioner:
   name: ansible
 verifier:

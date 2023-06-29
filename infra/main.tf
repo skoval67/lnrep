@@ -66,7 +66,7 @@ resource "yandex_compute_instance_group" "some-ig" {
     resources {
       memory        = 2
       cores         = 2
-      core_fraction = 20
+      core_fraction = 5
     }
 
     scheduling_policy {
@@ -77,7 +77,7 @@ resource "yandex_compute_instance_group" "some-ig" {
       mode = "READ_WRITE"
       initialize_params {
         image_id = var.image_id
-        size     = 10
+        size     = 15
       }
     }
 
@@ -141,7 +141,7 @@ resource "yandex_compute_instance" "vm-1" {
   platform_id = "standard-v1"
 
   resources {
-    core_fraction = 20
+    core_fraction = 5
     cores         = 2
     memory        = 2
   }
@@ -154,7 +154,7 @@ resource "yandex_compute_instance" "vm-1" {
     mode = "READ_WRITE"
     initialize_params {
       image_id = var.adminwks_image_id
-      size     = 10
+      size     = 15
     }
   }
 
@@ -207,6 +207,22 @@ resource "yandex_dns_recordset" "rs4" {
   ttl     = 200
   data    = [yandex_compute_instance.vm-1.network_interface.0.nat_ip_address]
 }
+
+ resource "yandex_dns_zone" "local_zone" {
+   name        = "private-zone"
+   description = "private zone"
+   zone        = "local.net."
+   public           = false
+   private_networks = [yandex_vpc_network.network1.id]
+ }
+
+ resource "yandex_dns_recordset" "priv_rs1" {
+   zone_id = yandex_dns_zone.local_zone.id
+   name    = "registry.local.net."
+   type    = "A"
+   ttl     = 200
+   data    = [yandex_compute_instance.vm-1.network_interface.0.ip_address]
+ }
 
 output "instance_group_ip_addresses" {
   value = yandex_compute_instance_group.some-ig.instances[*].network_interface[0].ip_address

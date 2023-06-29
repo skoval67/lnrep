@@ -1,4 +1,12 @@
 ---
-# vars file for dckrcfg
-python_moduls:
-  - docker
+# vars file for swarm_init
+
+docker_image:
+  - osixia/openldap
+  - osixia/phpldapadmin
+  - gitlab/gitlab-ce
+  - registry.rocket.chat/rocketchat/rocket.chat
+
+repos:
+  - 
+  - "{{ registry_host }}:{{ registry_port }}/"

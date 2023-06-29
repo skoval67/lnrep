@@ -1,0 +1,9 @@
+---
+- name: Set docker context
+  hosts: all
+  gather_facts: false
+  become: false
+  tasks:
+    - name: set docker context
+      local_action: shell docker context create "{{ inventory_hostname }}" --docker "host=ssh://ubuntu@{{ ansible_host }}"
+ 

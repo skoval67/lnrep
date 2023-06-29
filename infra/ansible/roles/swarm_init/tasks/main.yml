@@ -1,16 +1,59 @@
 ---
-# tasks file for dckrcfg
-- name: Install requirements
-  ansible.builtin.pip:
-    name: "{{ python_moduls }}"
-
-- name: Set docker context
-  shell: docker context create "{{ item }}" --docker "host=ssh://ubuntu@{{ hostvars[item].ansible_host }}"
-  with_items: "{{ groups['app_servers'] }}"
-  become: false
-
+# tasks file for swarm_init
 - name: Init a new swarm with default parameters
   community.docker.docker_swarm:
     state: present
-    #advertise_addr: eth0
   register: 'result'
+
+- name: Set node availability
+  community.docker.docker_node:
+    hostname: "{{ ansible_nodename }}"
+    availability: drain
+
+# Eliminate error 'http: server gave HTTP response to HTTPS client'
+- name: Template docker config
+  ansible.builtin.template:
+    src: templates/daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0640"
+
+- name: Restat service docker
+  ansible.builtin.systemd:
+    name: docker.service
+    state: restarted
+
+- name: Create Docker Registry
+  community.docker.docker_container:
+    name: registry
+    image: registry:2
+    state: started
+    restart_policy: unless-stopped
+    volumes:
+      - /etc/docker/registry:/var/lib/registry
+    published_ports:
+      - "{{registry_port}}:5000"
+
+- name: Pull images
+  community.docker.docker_image:
+    name: "{{ item }}"
+    source: pull
+    # Select platform for pulling. If not specified, will pull whatever docker prefers.
+    #pull:
+    #  platform: amd64
+  with_items: "{{ docker_image }}"
+
+- name: Tag and push to local registry
+  community.docker.docker_image:
+    name: "{{ item }}"
+    repository: "{{ registry_host }}:{{ registry_port }}/{{ item }}"
+    push: true
+    source: local
+  with_items: "{{ docker_image }}"
+
+- name: Remove images
+  community.docker.docker_image:
+    state: absent
+    name: "{{ item.0 }}{{ item.1 }}"
+  loop: "{{ repos | product(docker_image) | list }}"

@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  ldap:
+    image: registry.internal:5000/osixia/openldap
+    ports:
+      - "389:389"
+    networks:
+      - back-tier
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+            - node.role == manager
+    environment:
+      - LDAP_DOMAIN=tripleap.ru
+    env_file:
+      - .env
+    volumes:
+      - /opt/docker_final/ldap/data/slapd/database:/var/lib/ldap
+      - /opt/docker_final/ldap/data/slapd/config:/etc/ldap/slapd.d
+
+  ldap_admin:
+    image: osixia/phpldapadmin
+    ports:
+      - "6443:443"
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=ldap
+    networks:
+      - back-tier
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+            - node.role != manager
+
+networks:
+  back-tier:
+    driver: overlay
+    attachable: true

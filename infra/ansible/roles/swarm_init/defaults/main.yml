@@ -1,2 +1,5 @@
 ---
-# defaults file for dckrcfg
+# defaults file for swarm_init
+
+registry_host: registry.local.net
+registry_port: 5000

@@ -1,17 +1,23 @@
 ---
+- name: Check all systems are ready
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for system to become reachable
+      ansible.builtin.wait_for_connection:
 
 - name: Setup admin workstation
   hosts: adm_server
   become: true
   roles:
-    - osupgrade
+    #- osupgrade
     - docker_install
     - swarm_init
     - role: ufw
       vars:
         ufw_rules:
         # Set logging
-        - logging: "full"
+        - logging: "low"
         # Allow OpenSSH
         - rule: allow
           name: OpenSSH
@@ -23,6 +29,20 @@
   hosts: app_servers
   become: true
   roles:
-    - osupgrade
+    #- osupgrade
     - role: docker_install
       add_nodes: true
+  tasks:
+    - name: make app directory
+      ansible.builtin.file:
+        path: /opt/docker_final
+        state: directory
+        mode: '0755'
+
+- name: Set docker context
+  hosts: all
+  gather_facts: false
+  become: false
+  tasks:
+    - name: set docker context
+      local_action: shell docker context create "{{ inventory_hostname }}" --docker "host=ssh://ubuntu@{{ ansible_host }}"

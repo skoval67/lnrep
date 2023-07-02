@@ -1,17 +1,23 @@
-version: '3.9'
+version: '3.8'
+
+networks:
+  back-tier:
+    driver: overlay
+    attachable: true
+
+volumes:
+  mongodb_data:
+
 services:
   ldap:
-    image: registry.internal:5000/osixia/openldap
-    ports:
-      - "389:389"
+    image: registry.local.net:5000/osixia/openldap
     networks:
       - back-tier
     deploy:
-      mode: replicated
       replicas: 1
       placement:
         constraints:
-            - node.role == manager
+          - node.labels.host == app_0
     environment:
       - LDAP_DOMAIN=tripleap.ru
     env_file:
@@ -21,7 +27,7 @@ services:
       - /opt/docker_final/ldap/data/slapd/config:/etc/ldap/slapd.d
 
   ldap_admin:
-    image: osixia/phpldapadmin
+    image: registry.local.net:5000/osixia/phpldapadmin
     ports:
       - "6443:443"
     environment:
@@ -29,13 +35,64 @@ services:
     networks:
       - back-tier
     deploy:
-      mode: replicated
       replicas: 1
       placement:
         constraints:
-            - node.role != manager
+          - node.labels.host == app_0
 
-networks:
-  back-tier:
-    driver: overlay
-    attachable: true
+  gitlab:
+    image: registry.local.net:5000/gitlab/gitlab-ce
+    ports:
+      - "8080:80"
+    volumes:
+      - /opt/docker_final/gitlab/gitlab_home/config:/etc/gitlab
+      - /opt/docker_final/gitlab/gitlab_home/logs:/var/log/gitlab
+      - /opt/docker_final/gitlab/gitlab_home/data:/var/opt/gitlab
+    networks:
+      - back-tier
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.host == app_1
+
+  rocketchat:
+    image: registry.local.net:5000/registry.rocket.chat/rocketchat/rocket.chat
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      - MONGO_OPLOG_URL=mongodb://mongodb:27017/local?replicaset=rs0
+      - ROOT_URL=http://localhost:3000
+      - PORT=3000
+      - DEPLOY_METHOD=docker
+    depends_on:
+      - mongodb
+    networks:
+      - back-tier
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.host == app_2
+
+  mongodb:
+    image: registry.local.net:5000/docker.io/bitnami/mongodb:4.4
+    volumes:
+      - mongodb_data:/bitnami/mongodb
+    environment:
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_REPLICA_SET_NAME=rs0
+      - MONGODB_PORT_NUMBER=27017
+      - MONGODB_INITIAL_PRIMARY_HOST=mongodb
+      - MONGODB_INITIAL_PRIMARY_PORT_NUMBER=27017
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb
+      - MONGODB_ENABLE_JOURNAL=true
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - back-tier
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.host == app_2

@@ -10,20 +10,6 @@
     hostname: "{{ ansible_nodename }}"
     availability: drain
 
-# Eliminate error 'http: server gave HTTP response to HTTPS client'
-- name: Template docker config
-  ansible.builtin.template:
-    src: templates/daemon.json.j2
-    dest: /etc/docker/daemon.json
-    owner: root
-    group: root
-    mode: "0640"
-
-- name: Restat service docker
-  ansible.builtin.systemd:
-    name: docker.service
-    state: restarted
-
 - name: Create Docker Registry
   community.docker.docker_container:
     name: registry
@@ -39,9 +25,6 @@
   community.docker.docker_image:
     name: "{{ item }}"
     source: pull
-    # Select platform for pulling. If not specified, will pull whatever docker prefers.
-    #pull:
-    #  platform: amd64
   with_items: "{{ docker_image }}"
 
 - name: Tag and push to local registry
@@ -51,6 +34,7 @@
     push: true
     source: local
   with_items: "{{ docker_image }}"
+  ignore_errors: true
 
 - name: Remove images
   community.docker.docker_image:

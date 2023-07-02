@@ -6,6 +6,7 @@ docker_image:
   - osixia/phpldapadmin
   - gitlab/gitlab-ce
   - registry.rocket.chat/rocketchat/rocket.chat
+  - docker.io/bitnami/mongodb:4.4
 
 repos:
   - 

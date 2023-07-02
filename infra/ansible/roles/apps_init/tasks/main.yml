@@ -1,0 +1,14 @@
+---
+- name: install nfs server
+  ansible.builtin.apt:
+    name: nfs-kernel-server
+    state: present
+
+- name: Template exports config file
+  ansible.builtin.template:
+    src: "exports.j2"
+    dest: "/etc/exports"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: exportfs

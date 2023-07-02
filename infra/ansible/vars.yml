@@ -1,0 +1,21 @@
+---
+
+registry_host: registry.local.net
+registry_port: 5000
+
+ufw_rules:
+  # Set logging
+  - logging: "low"
+  # Allow OpenSSH
+  - rule: allow
+    name: OpenSSH
+  # Allow all traffic from internal hosts
+  - rule: allow
+    from_ip: "192.168.0.0/16"
+
+app_directories:
+  - /opt/docker_final/ldap/data/slapd/database
+  - /opt/docker_final/ldap/data/slapd/config
+  - /opt/docker_final/gitlab/gitlab_home/config
+  - /opt/docker_final/gitlab/gitlab_home/logs
+  - /opt/docker_final/gitlab/gitlab_home/data

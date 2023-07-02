@@ -64,9 +64,9 @@ resource "yandex_compute_instance_group" "some-ig" {
   instance_template {
     platform_id = "standard-v1"
     resources {
-      memory        = 2
-      cores         = 2
-      core_fraction = 5
+      memory        = 6
+      cores         = 4
+      core_fraction = 20
     }
 
     scheduling_policy {
@@ -93,7 +93,7 @@ resource "yandex_compute_instance_group" "some-ig" {
 
   scale_policy {
     fixed_scale {
-      size = 2
+      size = 3
     }
   }
 
@@ -106,29 +106,58 @@ resource "yandex_compute_instance_group" "some-ig" {
     max_expansion   = 0
   }
 
-  load_balancer {
-    target_group_name        = "target-group"
-    target_group_description = "load balancer target group"
+  # load_balancer {
+  #   target_group_name        = "target-group"
+  #   target_group_description = "load balancer target group"
+  # }
+}
+
+resource "yandex_lb_target_group" "lb_tg" {
+  name = "lbtg-web"
+
+  target {
+    subnet_id  = yandex_vpc_subnet.subnet-3.id
+    address = yandex_compute_instance.vm-1.network_interface.0.ip_address
   }
 }
 
 resource "yandex_lb_network_load_balancer" "nlb-web" {
   name = "nlb-web"
+
   listener {
-    name = "listener1"
-    port = 80
+    name        = "listener1"
+    port        = 8080
+    target_port = 8080
+    protocol    = "tcp"
     external_address_spec {
       ip_version = "ipv4"
     }
   }
+
+  listener {
+    name        = "listener2"
+    port        = 3000
+    target_port = 3000
+    protocol    = "tcp"
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  listener {
+    name        = "listener3"
+    port        = 6443
+    target_port = 6443
+    protocol    = "tcp"
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
   attached_target_group {
-    target_group_id = yandex_compute_instance_group.some-ig.load_balancer[0].target_group_id
+    target_group_id = yandex_lb_target_group.lb_tg.id
     healthcheck {
       name = "health-check"
-      #      http_options {
-      #        port = 80
-      #        path = "/health"
-      #      }
       tcp_options {
         port = 22
       }
@@ -137,13 +166,14 @@ resource "yandex_lb_network_load_balancer" "nlb-web" {
 }
 
 resource "yandex_compute_instance" "vm-1" {
-  name        = "adminwks"
-  platform_id = "standard-v1"
+  name                      = "adminwks"
+  platform_id               = "standard-v1"
+  allow_stopping_for_update = true
 
   resources {
     core_fraction = 5
     cores         = 2
-    memory        = 2
+    memory        = 4
   }
 
   scheduling_policy {
@@ -154,7 +184,8 @@ resource "yandex_compute_instance" "vm-1" {
     mode = "READ_WRITE"
     initialize_params {
       image_id = var.adminwks_image_id
-      size     = 15
+      size     = 20
+      type     = "network-ssd"
     }
   }
 
@@ -208,21 +239,21 @@ resource "yandex_dns_recordset" "rs4" {
   data    = [yandex_compute_instance.vm-1.network_interface.0.nat_ip_address]
 }
 
- resource "yandex_dns_zone" "local_zone" {
-   name        = "private-zone"
-   description = "private zone"
-   zone        = "local.net."
-   public           = false
-   private_networks = [yandex_vpc_network.network1.id]
- }
+resource "yandex_dns_zone" "local_zone" {
+  name             = "private-zone"
+  description      = "private zone"
+  zone             = "local.net."
+  public           = false
+  private_networks = [yandex_vpc_network.network1.id]
+}
 
- resource "yandex_dns_recordset" "priv_rs1" {
-   zone_id = yandex_dns_zone.local_zone.id
-   name    = "registry.local.net."
-   type    = "A"
-   ttl     = 200
-   data    = [yandex_compute_instance.vm-1.network_interface.0.ip_address]
- }
+resource "yandex_dns_recordset" "priv_rs1" {
+  zone_id = yandex_dns_zone.local_zone.id
+  name    = "registry.local.net."
+  type    = "A"
+  ttl     = 200
+  data    = [yandex_compute_instance.vm-1.network_interface.0.ip_address]
+}
 
 output "instance_group_ip_addresses" {
   value = yandex_compute_instance_group.some-ig.instances[*].network_interface[0].ip_address
@@ -230,4 +261,8 @@ output "instance_group_ip_addresses" {
 
 output "admin_server_ip_address" {
   value = yandex_compute_instance.vm-1.network_interface.0.nat_ip_address
+}
+
+output "alb_tg" {
+  value = yandex_lb_target_group.lb_tg
 }

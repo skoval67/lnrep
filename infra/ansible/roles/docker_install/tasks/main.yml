@@ -39,11 +39,20 @@
   ansible.builtin.pip:
     name: "{{ python_moduls }}"
 
+# Eliminate error 'http: server gave HTTP response to HTTPS client while pulling from registry'
+- name: Template docker config
+  ansible.builtin.template:
+    src: templates/daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0640"
+
 - name: "Enable docker service"
   ansible.builtin.service:
     name: docker
     enabled: true
-    state: started
+    state: reloaded
 
 - name: Add the user 'ubuntu' to the group 'docker'
   ansible.builtin.user:
@@ -56,7 +65,14 @@
     state: join
     join_token: "{{ hostvars['adm_0']['result']['swarm_facts']['JoinTokens']['Worker'] }}"
     remote_addrs: [ "{{ hostvars['adm_0']['ansible_default_ipv4']['address'] }}:2377" ]
-  when: add_nodes
+  when: add_nodes_to_swarm
+
+- name: Set node label
+  community.docker.docker_node:
+    hostname: "{{ ansible_nodename }}"
+    labels:
+      "host": "{{ inventory_hostname }}"
+  when: add_nodes_to_swarm
 
 - name: Copy file with tests
   ansible.builtin.copy:

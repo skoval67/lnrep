@@ -23,4 +23,4 @@ lockfilename:
   - lock
   - lock-frontend
 
-add_nodes: false
+add_nodes_to_swarm: false

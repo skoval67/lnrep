@@ -262,7 +262,3 @@ output "instance_group_ip_addresses" {
 output "admin_server_ip_address" {
   value = yandex_compute_instance.vm-1.network_interface.0.nat_ip_address
 }
-
-output "alb_tg" {
-  value = yandex_lb_target_group.lb_tg
-}

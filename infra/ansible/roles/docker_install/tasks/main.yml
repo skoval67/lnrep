@@ -67,12 +67,12 @@
     remote_addrs: [ "{{ hostvars['adm_0']['ansible_default_ipv4']['address'] }}:2377" ]
   when: add_nodes_to_swarm
 
-- name: Set node label
-  community.docker.docker_node:
-    hostname: "{{ ansible_nodename }}"
-    labels:
-      "host": "{{ inventory_hostname }}"
-  when: add_nodes_to_swarm
+# - name: Set node label
+#   community.docker.docker_node:
+#     hostname: "{{ ansible_nodename }}"
+#     labels:
+#       "host": "{{ inventory_hostname }}"
+#   when: add_nodes_to_swarm
 
 - name: Copy file with tests
   ansible.builtin.copy:

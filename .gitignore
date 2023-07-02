@@ -1,2 +1,3 @@
 .keys.auto.tfvars
 terraform.tfstate*
+.env
